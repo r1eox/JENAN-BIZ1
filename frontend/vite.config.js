@@ -11,11 +11,11 @@ export default defineConfig({
     host: '0.0.0.0',
     proxy: {
       '/api': {
-        target: 'http://192.168.1.10:5000', // ← ضع هنا IP السيرفر الفعلي في شبكتك
+        target: 'http://localhost:5000',
         changeOrigin: true
       },
       '/uploads': {
-        target: 'http://192.168.1.10:5000', // ← ضع هنا IP السيرفر الفعلي في شبكتك
+        target: 'http://localhost:5000',
         changeOrigin: true
       }
     }

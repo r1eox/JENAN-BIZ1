@@ -1,4 +1,6 @@
-const BASE = 'http://localhost:5000/api';
+const BASE = typeof window !== 'undefined' && window.location.hostname !== 'localhost'
+  ? '/api'
+  : 'http://localhost:5000/api';
 
 function token() { return localStorage.getItem('token') || ''; }
 
