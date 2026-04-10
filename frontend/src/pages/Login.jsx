@@ -140,12 +140,11 @@ export default function Login() {
 
         {/* الشعار – أعلى اليمين */}
 <div className="absolute top-5 right-5 z-10 leading-none select-none" dir="ltr">
-          <div className="flex items-baseline gap-[1px]">
+          <div className="flex items-baseline gap-0">
             <span className="font-serif font-bold text-white drop-shadow-[0_4px_14px_rgba(10,20,60,0.45)]" style={{ fontSize: '3rem', lineHeight: 1 }}>J</span>
             <span className="font-serif italic text-white/90 tracking-tight" style={{ fontSize: '1.35rem', lineHeight: 1 }}>enan</span>
           </div>
-          <div className="text-left text-sky-300 font-bold tracking-[0.32em] text-[0.6rem] mt-[-4px]">BIZ</div>
-        </div>
+          <div className="text-left text-sky-300 font-bold tracking-[0.22em] text-[0.85rem] mt-[-4px]">BIZ</div>
 
         {/* المحتوى الرئيسي – flex يملأ الشاشة كاملاً */}
         <div className="relative z-10 flex flex-col justify-between px-6 md:px-10 lg:px-14 text-right h-full" style={{ paddingTop: '4.5rem', paddingBottom: '1.5rem' }}>
