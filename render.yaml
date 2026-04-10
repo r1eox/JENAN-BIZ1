@@ -1,15 +1,10 @@
-services:
+﻿services:
 	- type: web
 		name: jenanbiz-app
 		runtime: node
 		plan: starter
 		rootDir: .
-		buildCommand: |
-			cd frontend
-			npm ci
-			npm run build
-			cd ..\backend
-			npm ci
+		buildCommand: cd frontend && npm ci --include=dev && npm run build && cd ../backend && npm ci --omit=dev
 		startCommand: cd backend && npm start
 		healthCheckPath: /api/health
 		envVars:
