@@ -1,0 +1,45 @@
+﻿# Node modules
+node_modules/
+backend/node_modules/
+frontend/node_modules/
+
+# Environment files
+.env
+*.env
+!.env.example
+backend/.env
+frontend/.env
+
+# Runtime data
+backend/*.db
+backend/*.db-shm
+backend/*.db-wal
+uploads/
+backend/uploads/
+
+# Build outputs
+frontend/dist/
+
+# Logs and OS files
+*.log
+desktop.ini
+Thumbs.db
+
+# Archives and installers
+*.zip
+*.exe
+
+# Personal documents - never commit these
+*.pdf
+*.PDF
+*.docx
+*.xlsx
+*.xls
+"WhatsApp Image*"
+
+# Personal documents - never commit these
+*.pdf
+*.PDF
+*.docx
+*.xlsx
+*.xls

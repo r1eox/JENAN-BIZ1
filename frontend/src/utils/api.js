@@ -1,0 +1,99 @@
+const BASE = 'http://localhost:5000/api';
+
+function token() { return localStorage.getItem('token') || ''; }
+
+async function req(method, path, body, isForm = false) {
+  const headers = { Authorization: `Bearer ${token()}` };
+  if (!isForm) headers['Content-Type'] = 'application/json';
+  const res = await fetch(`${BASE}${path}`, {
+    method,
+    headers,
+    body: isForm ? body : (body ? JSON.stringify(body) : undefined)
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(data.error || 'خطأ في الخادم');
+  return data;
+}
+
+const api = {
+  login: (email, password) => req('POST', '/auth/login', { email, password }),
+  register: (data) => req('POST', '/auth/register', data),
+
+  getRequests: () => req('GET', '/requests'),
+  getAdminRequests: () => req('GET', '/admin/requests'),
+  createRequest: (data) => req('POST', '/requests', data),
+  getRequest: (id) => req('GET', `/requests/${id}`),
+
+  // كشوفات الحساب البنكية (PDF)
+  uploadBankStatements: (id, files) => {
+    const fd = new FormData();
+    files.forEach(f => fd.append('files', f));
+    return req('POST', `/requests/${id}/bank-statements`, fd, true);
+  },
+
+  // كشوفات الحساب (Excel)
+  uploadAccountStatements: (id, files) => {
+    const fd = new FormData();
+    files.forEach(f => fd.append('files', f));
+    return req('POST', `/requests/${id}/account-statements`, fd, true);
+  },
+
+  // رفع مستند واحد بالاسم
+  uploadDocument: (reqId, docId, file) => {
+    const fd = new FormData();
+    fd.append('file', file);
+    return req('POST', `/requests/${reqId}/documents/${docId}/upload`, fd, true);
+  },
+
+  // إقرار ضريبي بسنة محددة
+  uploadTaxDeclaration: (id, yearLabel, file) => {
+    const fd = new FormData();
+    fd.append('file', file);
+    fd.append('year_label', yearLabel);
+    return req('POST', `/requests/${id}/tax-declarations`, fd, true);
+  },
+
+  // قائمة مالية بسنة محددة
+  uploadFinancialStatement: (id, yearLabel, file) => {
+    const fd = new FormData();
+    fd.append('file', file);
+    fd.append('year_label', yearLabel);
+    return req('POST', `/requests/${id}/financial-statements`, fd, true);
+  },
+
+  // تجميع وإرسال الطلب النهائي للمدير (3 ملفات ZIP)
+  finalizeSubmission: (id) => req('POST', `/requests/${id}/finalize-submission`),
+
+  // ===== أدمن: إدارة خانات المستندات =====
+  adminAddDocument:    (requestId, name)        => req('POST',   `/admin/requests/${requestId}/documents`,       { document_name: name }),
+  adminUpdateDocument: (requestId, docId, name) => req('PUT',    `/admin/requests/${requestId}/documents/${docId}`, { document_name: name }),
+  adminDeleteDocument: (requestId, docId)       => req('DELETE', `/admin/requests/${requestId}/documents/${docId}`),
+
+  // ===== الرسائل =====
+  getMessages:   (requestId)          => req('GET',  `/requests/${requestId}/messages`),
+  sendMessage:   (requestId, message) => req('POST', `/requests/${requestId}/messages`, { message }),
+  getMessageReadState:  (requestId) => req('GET', `/requests/${requestId}/messages/read-state`),
+  markMessagesRead:    (requestId, lastReadAt) => req('POST', `/requests/${requestId}/messages/mark-read`, { last_read_at: lastReadAt }),
+  adminGetMessages:    (requestId) => req('GET',  `/admin/requests/${requestId}/messages`),
+  adminSendMessage:    (requestId, message) => req('POST', `/admin/requests/${requestId}/messages`, { message }),
+  adminGetMessageReadState: (requestId) => req('GET', `/admin/requests/${requestId}/messages/read-state`),
+  adminMarkMessagesRead:   (requestId, lastReadAt) => req('POST', `/admin/requests/${requestId}/messages/mark-read`, { last_read_at: lastReadAt }),
+
+  // ===== الرسائل الجماعية =====
+  getBroadcastMessages: () => req('GET', '/requests/broadcast-messages'),
+  getBroadcastReadState: () => req('GET', '/requests/broadcast-messages/read-state'),
+  markBroadcastRead:    (lastReadAt) => req('POST', '/requests/broadcast-messages/mark-read', { last_read_at: lastReadAt }),
+  getUnreadSummary: () => req('GET', '/requests/unread-summary'),
+  adminGetBroadcastMessages: () => req('GET', '/admin/broadcast-messages'),
+  adminSendBroadcastMessage: (payload) => req('POST', '/admin/broadcast-messages', payload),
+  adminDeleteBroadcast: (id) => req('DELETE', `/admin/broadcast-messages/${id}`),
+
+  submitFile: (id, file) => {
+    const fd = new FormData();
+    fd.append('file', file);
+    return req('POST', `/requests/${id}/submit-file`, fd, true);
+  },
+};
+
+export default api;
+
