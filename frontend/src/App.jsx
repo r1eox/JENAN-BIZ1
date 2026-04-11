@@ -9,6 +9,10 @@ import AdminPanel from './pages/AdminPanel';
 import NewRequest from './pages/NewRequest';
 import RequestDetail from './pages/RequestDetail';
 import Broadcasts from './pages/Broadcasts';
+import FundingEntities from './pages/FundingEntities';
+import Companies from './pages/Companies';
+import Brokers from './pages/Brokers';
+import Attendance from './pages/Attendance';
 
 function PrivateRoute({ children }) {
   const { user } = useAuth();
@@ -31,8 +35,13 @@ export default function App() {
       <Route path="/request/new" element={<PrivateRoute><NewRequest /></PrivateRoute>} />
       <Route path="/request/:id" element={<PrivateRoute><RequestDetail /></PrivateRoute>} />
       <Route path="/broadcasts" element={<PrivateRoute><Broadcasts /></PrivateRoute>} />
+      <Route path="/funding-entities" element={<AdminRoute><FundingEntities /></AdminRoute>} />
+      <Route path="/companies" element={<AdminRoute><Companies /></AdminRoute>} />
+      <Route path="/brokers" element={<PrivateRoute><Brokers /></PrivateRoute>} />
+      <Route path="/attendance" element={<PrivateRoute><Attendance /></PrivateRoute>} />
       <Route path="*" element={<Navigate to="/login" replace />} />
     </Routes>
   );
 }
+
 

@@ -116,7 +116,8 @@ router.put('/requests/:id/status', adminMiddleware, (req, res) => {
       'draft', 'bank_uploaded', 'analyzing', 'analyzed', 'docs_pending',
       'docs_ready', 'contract_submitted', 'forms_ready', 'forms_sent', 'file_submitted',
       'missing', 'missing_submitted', 'contract_received',
-      'submitted', 'approved', 'transferred', 'fees_received', 'rejected'
+      'submitted', 'approved', 'sent_to_entity', 'contract_signed',
+      'transferred', 'fees_received', 'rejected'
     ];
     if (!validStatuses.includes(status)) return res.status(400).json({ error: 'حالة غير صحيحة' });
 
@@ -160,6 +161,29 @@ router.post('/requests/:id/send-missing', adminMiddleware, (req, res) => {
     res.status(500).json({ error: 'خطأ في إرسال النواقص' });
   }
 });
+
+// PUT /admin/requests/:id/assign-entity — ربط جهة التمويل وإرسال الطلب
+router.put('/requests/:id/assign-entity', adminMiddleware, (req, res) => {
+  try {
+    const { funding_entity_id } = req.body;
+    if (!funding_entity_id) return res.status(400).json({ error: 'معرّف الجهة التمويلية مطلوب' });
+
+    const entity = db.prepare('SELECT * FROM funding_entities WHERE id = ?').get(funding_entity_id);
+    if (!entity) return res.status(404).json({ error: 'الجهة التمويلية غير موجودة' });
+
+    db.prepare("UPDATE requests SET funding_entity_id = ?, status = 'sent_to_entity', updated_at = datetime('now') WHERE id = ?")
+      .run(funding_entity_id, req.params.id);
+
+    db.prepare('INSERT INTO status_history (request_id, status, note, created_by) VALUES (?, ?, ?, ?)')
+      .run(req.params.id, 'sent_to_entity', `تم الإرسال لجهة التمويل: ${entity.name}`, req.user.id);
+
+    res.json({ message: 'تم إرسال الطلب للجهة التمويلية', entity });
+  } catch (err) {
+    res.status(500).json({ error: 'خطأ في إرسال الطلب' });
+  }
+});
+
+
 
 // GET missing items requests for dashboard
 router.get('/missing-requests', adminMiddleware, (req, res) => {

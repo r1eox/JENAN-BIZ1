@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../utils/api';
-
 // ======================================================
 // أسئلة التأهيل — الإجابة على هذه الأسئلة تحدد إمكانية التأهيل
 // ======================================================
@@ -49,6 +48,7 @@ export default function NewRequest() {
     ownership_type: 'سعودي',
     funding_type: 'نقاط بيع',
   });
+  const [broker, setBroker] = useState({ name: '', phone: '' });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -79,6 +79,10 @@ export default function NewRequest() {
     setError('');
     try {
       const req = await api.createRequest(form);
+      // إذا أدخل الموظف بيانات وسيط، يتم حفظه تلقائياً
+      if (broker.name.trim() && broker.phone.trim()) {
+        await api.addBroker({ name: broker.name.trim(), phone: broker.phone.trim() }).catch(() => {});
+      }
       navigate(`/request/${req.id}`);
     } catch (err) {
       setError(err.message);
@@ -174,6 +178,34 @@ export default function NewRequest() {
                 </select>
               </div>
             </div>
+
+            {/* ── بيانات الوسيط (اختيارية) ── */}
+            <div className="border-t border-slate-100 pt-4">
+              <p className="text-xs text-slate-400 font-semibold mb-3 uppercase tracking-wide">🤝 الوسيط (اختياري)</p>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-sm font-semibold text-slate-700 mb-1">اسم الوسيط</label>
+                  <input
+                    type="text"
+                    className="w-full border border-slate-200 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-blue-500"
+                    placeholder="اسم الوسيط"
+                    value={broker.name}
+                    onChange={e => setBroker({ ...broker, name: e.target.value })}
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold text-slate-700 mb-1">جوال الوسيط</label>
+                  <input
+                    type="tel"
+                    className="w-full border border-slate-200 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-blue-500"
+                    placeholder="05XXXXXXXX"
+                    value={broker.phone}
+                    onChange={e => setBroker({ ...broker, phone: e.target.value })}
+                  />
+                </div>
+              </div>
+            </div>
+
             <button
               type="submit" disabled={loading}
               className="w-full bg-blue-700 text-white py-3 rounded-lg font-bold hover:bg-blue-800 transition disabled:opacity-50 mt-2"

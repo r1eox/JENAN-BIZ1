@@ -191,6 +191,36 @@ export default function Dashboard() {
         </div>
       </nav>
 
+      {/* شريط التنقل بين الأقسام */}
+      <div className="bg-white border-b border-slate-100 px-4 overflow-x-auto">
+        <div className="flex items-center gap-1 max-w-5xl mx-auto min-w-max">
+          <button
+            onClick={() => navigate('/dashboard')}
+            className="flex items-center gap-1.5 px-4 py-3 text-sm font-semibold text-blue-700 border-b-2 border-blue-700 whitespace-nowrap"
+          >📋 الطلبات</button>
+          <button
+            onClick={() => navigate('/brokers')}
+            className="flex items-center gap-1.5 px-4 py-3 text-sm font-medium text-slate-500 hover:text-slate-700 hover:bg-slate-50 border-b-2 border-transparent whitespace-nowrap"
+          >🤝 الوسطاء</button>
+          <button
+            onClick={() => navigate('/attendance')}
+            className="flex items-center gap-1.5 px-4 py-3 text-sm font-medium text-slate-500 hover:text-slate-700 hover:bg-slate-50 border-b-2 border-transparent whitespace-nowrap"
+          >🕐 الحضور والانصراف</button>
+          {isAdmin && (
+            <>
+              <button
+                onClick={() => navigate('/companies')}
+                className="flex items-center gap-1.5 px-4 py-3 text-sm font-medium text-slate-500 hover:text-slate-700 hover:bg-slate-50 border-b-2 border-transparent whitespace-nowrap"
+              >🏢 المنشآت</button>
+              <button
+                onClick={() => navigate('/funding-entities')}
+                className="flex items-center gap-1.5 px-4 py-3 text-sm font-medium text-slate-500 hover:text-slate-700 hover:bg-slate-50 border-b-2 border-transparent whitespace-nowrap"
+              >🏦 جهات التمويلية</button>
+            </>
+          )}
+        </div>
+      </div>
+
       <div className="max-w-5xl mx-auto p-6">
         {/* رأس الصفحة */}
         <div className="flex items-center justify-between mb-5">

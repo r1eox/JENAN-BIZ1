@@ -10,13 +10,20 @@ const FIN_YEARS  = [`قوائم ${CY - 1}`, `قوائم ${CY - 2}`];
 
 // ── بادج الحالة ──
 const STATUS_MAP = {
-  draft:            { label: 'مسودة',               color: 'bg-slate-100 text-slate-600' },
-  bank_uploaded:    { label: 'كشوفات مرفوعة',        color: 'bg-blue-100 text-blue-700' },
-  docs_pending:     { label: 'مستندات مطلوبة',       color: 'bg-yellow-100 text-yellow-700' },
-  docs_ready:       { label: 'مستندات جاهزة',        color: 'bg-teal-100 text-teal-700' },
-  file_submitted:   { label: 'مُرسَل للمدير ✓',      color: 'bg-purple-100 text-purple-700' },
-  approved:         { label: 'موافقة ✓',             color: 'bg-green-100 text-green-700' },
-  rejected:         { label: 'مرفوض',                color: 'bg-red-100 text-red-700' },
+  draft:            { label: 'مسودة',                      color: 'bg-slate-100 text-slate-600' },
+  bank_uploaded:    { label: 'كشوفات مرفوعة',              color: 'bg-blue-100 text-blue-700' },
+  docs_pending:     { label: 'مستندات مطلوبة',             color: 'bg-yellow-100 text-yellow-700' },
+  docs_ready:       { label: 'مستندات جاهزة',              color: 'bg-teal-100 text-teal-700' },
+  file_submitted:   { label: 'مُرسَل للمدير ✓',            color: 'bg-purple-100 text-purple-700' },
+  sent_to_entity:   { label: 'مُرسَل للجهة التمويلية ✓',   color: 'bg-indigo-100 text-indigo-700' },
+  approved:         { label: 'موافقة ✓',                   color: 'bg-green-100 text-green-700' },
+  contract_signed:  { label: 'تم التوقيع ✓',               color: 'bg-emerald-100 text-emerald-700' },
+  contract_submitted: { label: 'عقد مُرسَل',               color: 'bg-teal-100 text-teal-700' },
+  contract_received:  { label: 'عقد مُستلَم',              color: 'bg-teal-100 text-teal-700' },
+  transferred:      { label: 'تم تحويل التمويل 🎉',        color: 'bg-green-200 text-green-800' },
+  fees_received:    { label: 'تم استلام الرسوم',            color: 'bg-green-100 text-green-700' },
+  missing:          { label: 'يوجد نواقص ⚠️',              color: 'bg-orange-100 text-orange-700' },
+  rejected:         { label: 'مرفوض',                      color: 'bg-red-100 text-red-700' },
 };
 
 function StatusBadge({ status }) {
@@ -151,9 +158,173 @@ function Section({ icon, title, badgeCount, total, isOpen, onToggle, children, c
   );
 }
 
-// ═══════════════════════════════════════════════════════════════
-//  أداة إدارة المستندات (للأدمن فقط)
-// ═══════════════════════════════════════════════════════════════
+// ── الخط الزمني لتتبع حالة الطلب (للموظف) ──
+const TIMELINE_STEPS = [
+  { key: 'draft',           label: 'تم إنشاء الطلب',              icon: '📝', statuses: ['draft', 'bank_uploaded', 'docs_pending', 'docs_ready', 'analyzing', 'analyzed'] },
+  { key: 'file_submitted',  label: 'تم الإرسال للمدير',           icon: '📤', statuses: ['file_submitted'] },
+  { key: 'sent_to_entity',  label: 'تم الإرسال للجهة التمويلية', icon: '🏦', statuses: ['sent_to_entity', 'submitted', 'approved', 'forms_ready', 'forms_sent'] },
+  { key: 'contract',        label: 'تم التوقيع على العقد',        icon: '✍️', statuses: ['contract_submitted', 'contract_received', 'contract_signed'] },
+  { key: 'transferred',     label: 'تم تحويل مبلغ التمويل',      icon: '💰', statuses: ['transferred', 'fees_received'] },
+];
+
+function StatusTimeline({ status }) {
+  if (!status || status === 'rejected') return null;
+
+  const missingActive = status === 'missing' || status === 'missing_submitted';
+
+  // تحديد الخطوة الحالية
+  let activeStep = 0;
+  for (let i = TIMELINE_STEPS.length - 1; i >= 0; i--) {
+    if (TIMELINE_STEPS[i].statuses.includes(status)) { activeStep = i; break; }
+  }
+
+  return (
+    <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5">
+      <h3 className="text-sm font-bold text-slate-600 mb-4">📍 تتبع حالة الطلب</h3>
+
+      {missingActive && (
+        <div className="mb-4 flex items-center gap-3 bg-orange-50 border border-orange-200 rounded-xl px-4 py-3">
+          <span className="text-xl">⚠️</span>
+          <div>
+            <p className="text-sm font-bold text-orange-800">يوجد نواقص في ملفك</p>
+            <p className="text-xs text-orange-600">يرجى راجعة المحادثة أدناه لمعرفة المطلوب</p>
+          </div>
+        </div>
+      )}
+
+      <div className="relative">
+        {/* خط رأسي */}
+        <div className="absolute right-5 top-5 bottom-5 w-0.5 bg-slate-200" />
+        <div className="space-y-4">
+          {TIMELINE_STEPS.map((step, idx) => {
+            const done    = idx < activeStep;
+            const current = idx === activeStep;
+            return (
+              <div key={step.key} className="flex items-center gap-4 relative">
+                <div className={`w-10 h-10 rounded-full flex items-center justify-center text-lg flex-shrink-0 z-10 border-2
+                  ${done    ? 'bg-green-500 border-green-500 text-white'
+                  : current ? 'bg-blue-600 border-blue-600 text-white ring-4 ring-blue-100'
+                  :           'bg-white border-slate-200 text-slate-300'}`}>
+                  {done ? '✓' : step.icon}
+                </div>
+                <div>
+                  <p className={`text-sm font-semibold ${done ? 'text-green-700' : current ? 'text-blue-800' : 'text-slate-400'}`}>
+                    {step.label}
+                  </p>
+                  {current && !missingActive && <p className="text-xs text-blue-500 mt-0.5">الحالة الحالية</p>}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── موداl إرسال الطلب للجهة التمويلية (للأدمن) ──
+function SendToEntityModal({ request, onClose, onSent }) {
+  const [entities,   setEntities]   = useState([]);
+  const [selectedId, setSelectedId] = useState('');
+  const [sending,    setSending]    = useState(false);
+  const [err,        setErr]        = useState('');
+
+  useEffect(() => {
+    api.adminGetFundingEntities().then(setEntities).catch(() => {});
+  }, []);
+
+  const selectedEntity = entities.find(e => String(e.id) === String(selectedId));
+
+  const handleSend = async () => {
+    if (!selectedId) return;
+    setSending(true); setErr('');
+    try {
+      await api.adminAssignFundingEntity(request.id, selectedId);
+      onSent(selectedEntity);
+    } catch (e) { setErr(e.message); }
+    finally { setSending(false); }
+  };
+
+  const waMessage = selectedEntity
+    ? encodeURIComponent(
+        `*طلب تمويل جديد* 🏢\n\n` +
+        `الشركة: ${request.company_name}\n` +
+        `نوع المنشأة: ${request.entity_type || '—'}\n` +
+        `ملكية: ${request.ownership_type || '—'}\n` +
+        `نوع التمويل: ${request.funding_type || '—'}\n` +
+        (request.owner_name  ? `المالك: ${request.owner_name}\n`     : '') +
+        (request.owner_phone ? `جوال المالك: ${request.owner_phone}\n` : '') +
+        (request.user_name   ? `الموظف: ${request.user_name}\n`     : '') +
+        `\nجاهز للمراجعة ✅`
+      )
+    : '';
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4" dir="rtl">
+      <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-6">
+        <div className="flex items-center justify-between mb-5">
+          <h2 className="font-bold text-blue-900 text-lg">📤 إرسال الطلب للجهة التمويلية</h2>
+          <button onClick={onClose} className="text-slate-400 hover:text-slate-600 text-xl font-bold">✕</button>
+        </div>
+
+        {/* معلومات الطلب */}
+        <div className="bg-slate-50 rounded-xl p-4 mb-5 text-sm space-y-1">
+          <p><span className="text-slate-400">الشركة: </span><span className="font-semibold">{request.company_name}</span></p>
+          {request.user_name  && <p><span className="text-slate-400">الموظف: </span>{request.user_name}</p>}
+          {request.owner_name && <p><span className="text-slate-400">المالك: </span>{request.owner_name}</p>}
+          <p><span className="text-slate-400">نوع التمويل: </span>{request.funding_type || '—'}</p>
+        </div>
+
+        {/* اختيار الجهة */}
+        <label className="block text-sm font-semibold text-slate-700 mb-2">اختر جهة التمويل:</label>
+        <select
+          value={selectedId}
+          onChange={e => setSelectedId(e.target.value)}
+          className="w-full border border-slate-300 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400 mb-4"
+        >
+          <option value="">— اختر جهة التمويل —</option>
+          {entities.map(e => (
+            <option key={e.id} value={e.id}>{e.name}</option>
+          ))}
+        </select>
+
+        {err && <p className="text-red-500 text-xs mb-3">⚠ {err}</p>}
+
+        <div className="flex gap-3">
+          {/* زر الإرسال + تحديث الحالة */}
+          <button
+            onClick={handleSend}
+            disabled={sending || !selectedId}
+            className="flex-1 bg-blue-700 text-white py-3 rounded-xl font-bold text-sm hover:bg-blue-800 disabled:opacity-50 transition"
+          >
+            {sending ? '⏳ جاري...' : '✓ تأكيد الإرسال'}
+          </button>
+
+          {/* زر واتساب (يفتح بعد اختيار الجهة) */}
+          {selectedEntity?.whatsapp_number && (
+            <a
+              href={`https://wa.me/${selectedEntity.whatsapp_number.replace(/\D/g, '')}?text=${waMessage}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-2 bg-green-500 text-white px-4 py-3 rounded-xl font-bold text-sm hover:bg-green-600 transition"
+            >
+              <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
+              </svg>
+              واتساب
+            </a>
+          )}
+
+          <button onClick={onClose} className="px-4 py-3 border border-slate-200 rounded-xl text-sm text-slate-600 hover:bg-slate-50 transition">
+            إلغاء
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+
 function AdminDocManager({ requestId, docs, onRefresh }) {
   const [newName,    setNewName]    = useState('');
   const [adding,     setAdding]     = useState(false);
@@ -266,6 +437,8 @@ export default function RequestDetail() {
   const [sending,  setSending]  = useState(false);
   const [sendMsg,  setSendMsg]  = useState('');
   const [sendErr,  setSendErr]  = useState('');
+  const [showSendModal, setShowSendModal] = useState(false);
+  const [skipFinancial, setSkipFinancial] = useState(false);
 
   // ── الرسائل ──
   const [messages,    setMessages]    = useState([]);
@@ -279,7 +452,10 @@ export default function RequestDetail() {
   ), [isAdmin]);
 
   const fetchRequest = async () => {
-    try { const d = await api.getRequest(id); setRequest(d); }
+    try {
+      const d = isAdmin ? await api.adminGetRequestDetail(id) : await api.getRequest(id);
+      setRequest(d);
+    }
     catch (e) { setErr(e.message); }
     finally { setLoading(false); }
   };
@@ -389,7 +565,9 @@ export default function RequestDetail() {
     </div>
   );
 
-  const isSubmitted = request?.status === 'file_submitted' || request?.status === 'approved';
+  const isSubmitted = request?.status === 'file_submitted' || request?.status === 'approved'
+    || request?.status === 'sent_to_entity' || request?.status === 'contract_signed'
+    || request?.status === 'transferred' || request?.status === 'fees_received';
 
   return (
     <div className="min-h-screen bg-slate-50" dir="rtl">
@@ -417,7 +595,67 @@ export default function RequestDetail() {
           <div className="grid grid-cols-2 gap-2 text-sm text-slate-600 mt-3">
             {request?.owner_name  && <div><span className="text-slate-400">المالك: </span>{request.owner_name}</div>}
             {request?.owner_phone && <div><span className="text-slate-400">الهاتف: </span>{request.owner_phone}</div>}
+            {isAdmin && request?.user_name && <div><span className="text-slate-400">الموظف: </span>{request.user_name}</div>}
+            {isAdmin && request?.user_phone && <div><span className="text-slate-400">جوال الموظف: </span>{request.user_phone}</div>}
+            {isAdmin && request?.funding_entity_name && <div className="col-span-2"><span className="text-slate-400">الجهة التمويلية: </span><span className="font-semibold">{request.funding_entity_name}</span></div>}
           </div>
+
+          {/* ── زر إرسال للجهة التمويلية (للأدمن) ── */}
+          {isAdmin && (
+            <div className="mt-4 pt-4 border-t border-slate-100">
+              <div className="flex items-center gap-3 flex-wrap">
+                <button
+                  onClick={() => setShowSendModal(true)}
+                  className="inline-flex items-center gap-2 bg-indigo-600 text-white px-5 py-2.5 rounded-xl text-sm font-bold hover:bg-indigo-700 transition shadow"
+                >
+                  📤 إرسال للجهة التمويلية
+                </button>
+                {request?.funding_entity_name && (
+                  <span className="text-xs bg-indigo-50 text-indigo-700 px-3 py-1.5 rounded-lg font-semibold border border-indigo-200">
+                    ✓ {request.funding_entity_name}
+                  </span>
+                )}
+                {request?.fe_whatsapp && (
+                  <a
+                    href={`https://wa.me/${request.fe_whatsapp.replace(/\D/g, '')}?text=${encodeURIComponent(
+                      `*طلب تمويل جديد* 🏢\n\nالشركة: ${request.company_name}\n` +
+                      `نوع المنشأة: ${request.entity_type || '—'}\n` +
+                      `ملكية: ${request.ownership_type || '—'}\n` +
+                      `نوع التمويل: ${request.funding_type || '—'}\n` +
+                      (request.owner_name  ? `المالك: ${request.owner_name}\n`     : '') +
+                      (request.owner_phone ? `جوال المالك: ${request.owner_phone}\n` : '') +
+                      (request.user_name   ? `الموظف: ${request.user_name}\n`      : '') +
+                      `\nجاهز للمراجعة ✅`
+                    )}`}
+                    target="_blank" rel="noopener noreferrer"
+                    className="inline-flex items-center gap-2 bg-green-500 text-white px-4 py-2 rounded-xl text-xs font-semibold hover:bg-green-600 transition"
+                  >
+                    <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor">
+                      <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
+                    </svg>
+                    واتساب الجهة
+                  </a>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* ── زر واتساب للموظف (للأدمن فقط) ── */}
+          {isAdmin && request?.user_phone && (
+            <div className="mt-3">
+              <a
+                href={`https://wa.me/${request.user_phone.replace(/\D/g, '')}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 bg-blue-500 text-white px-4 py-2 rounded-xl text-xs font-semibold hover:bg-blue-600 transition"
+              >
+                <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
+                </svg>
+                واتساب الموظف
+              </a>
+            </div>
+          )}
         </div>
 
         {isSubmitted && (
@@ -428,7 +666,10 @@ export default function RequestDetail() {
           </div>
         )}
 
-        {/* ══════════════════════════════════════════════ */}
+        {/* ── خط زمني لتتبع الحالة (للموظف فقط) ── */}
+        {!isAdmin && <StatusTimeline status={request?.status} />}
+
+
         {/* 1 ── المستندات */}
         {/* ══════════════════════════════════════════════ */}
         <Section
@@ -488,44 +729,65 @@ export default function RequestDetail() {
         {/* ══════════════════════════════════════════════ */}
         {/* 3 ── الإقرارات الضريبية (3 سنوات) */}
         {/* ══════════════════════════════════════════════ */}
-        <Section
-          icon="📊" title="الإقرارات الضريبية" color="purple"
-          badgeCount={taxDoneCount} total={TAX_YEARS.length}
-          isOpen={openSec === 'tax'} onToggle={() => toggle('tax')}
-        >
-          {TAX_YEARS.map(yr => (
-            <SingleSlot
-              key={yr}
-              label={yr}
-              sublabel="ارفع الإقرار الضريبي لهذه السنة"
-              accept=".pdf,.jpg,.jpeg,.png,.webp"
-              existingFile={uploadedTaxByYear[yr]?.file_name || null}
-              onUpload={async (file) => { await api.uploadTaxDeclaration(id, yr, file); fetchRequest(); }}
-              disabled={isSubmitted}
+
+        {/* خيار التخطي لمن لا يحتاج */}
+        {!isAdmin && (
+          <div className="flex items-center gap-3 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3">
+            <input
+              type="checkbox"
+              id="skipFinancial"
+              checked={skipFinancial}
+              onChange={e => setSkipFinancial(e.target.checked)}
+              className="w-4 h-4 accent-amber-500 cursor-pointer"
             />
-          ))}
-        </Section>
+            <label htmlFor="skipFinancial" className="text-sm text-amber-800 cursor-pointer select-none">
+              منشأتي لا تحتاج إقرارات ضريبية أو قوائم مالية (مثلاً: أقل من سنتين نشاط)
+            </label>
+          </div>
+        )}
+
+        {!skipFinancial && (
+          <Section
+            icon="📊" title="الإقرارات الضريبية" color="purple"
+            badgeCount={taxDoneCount} total={TAX_YEARS.length}
+            isOpen={openSec === 'tax'} onToggle={() => toggle('tax')}
+          >
+            {TAX_YEARS.map(yr => (
+              <SingleSlot
+                key={yr}
+                label={yr}
+                sublabel="ارفع الإقرار الضريبي لهذه السنة (اختياري)"
+                accept=".pdf,.jpg,.jpeg,.png,.webp"
+                existingFile={uploadedTaxByYear[yr]?.file_name || null}
+                onUpload={async (file) => { await api.uploadTaxDeclaration(id, yr, file); fetchRequest(); }}
+                disabled={isSubmitted}
+              />
+            ))}
+          </Section>
+        )}
 
         {/* ══════════════════════════════════════════════ */}
         {/* 4 ── القوائم المالية (2 سنوات) */}
         {/* ══════════════════════════════════════════════ */}
-        <Section
-          icon="📈" title="القوائم المالية" color="green"
-          badgeCount={finDoneCount} total={FIN_YEARS.length}
-          isOpen={openSec === 'fin'} onToggle={() => toggle('fin')}
-        >
-          {FIN_YEARS.map(yr => (
-            <SingleSlot
-              key={yr}
-              label={yr}
-              sublabel="ارفع الميزانية أو القائمة المالية لهذه السنة"
-              accept=".pdf,.jpg,.jpeg,.png,.webp"
-              existingFile={uploadedFinByYear[yr]?.file_name || null}
-              onUpload={async (file) => { await api.uploadFinancialStatement(id, yr, file); fetchRequest(); }}
-              disabled={isSubmitted}
-            />
-          ))}
-        </Section>
+        {!skipFinancial && (
+          <Section
+            icon="📈" title="القوائم المالية" color="green"
+            badgeCount={finDoneCount} total={FIN_YEARS.length}
+            isOpen={openSec === 'fin'} onToggle={() => toggle('fin')}
+          >
+            {FIN_YEARS.map(yr => (
+              <SingleSlot
+                key={yr}
+                label={yr}
+                sublabel="ارفع الميزانية أو القائمة المالية لهذه السنة (اختياري)"
+                accept=".pdf,.jpg,.jpeg,.png,.webp"
+                existingFile={uploadedFinByYear[yr]?.file_name || null}
+                onUpload={async (file) => { await api.uploadFinancialStatement(id, yr, file); fetchRequest(); }}
+                disabled={isSubmitted}
+              />
+            ))}
+          </Section>
+        )}
 
         {/* ══════════════════════════════════════════════ */}
         {/* زر الإرسال النهائي */}
@@ -625,5 +887,17 @@ export default function RequestDetail() {
 
       </div>
     </div>
+
+    {/* ── موداl إرسال الطلب للجهة التمويلية (أدمن) ── */}
+    {showSendModal && request && (
+      <SendToEntityModal
+        request={request}
+        onClose={() => setShowSendModal(false)}
+        onSent={(entity) => {
+          setShowSendModal(false);
+          fetchRequest();
+        }}
+      />
+    )}
   );
 }

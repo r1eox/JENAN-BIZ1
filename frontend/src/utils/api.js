@@ -1,6 +1,6 @@
 const BASE = typeof window !== 'undefined' && window.location.hostname !== 'localhost'
   ? '/api'
-  : 'http://localhost:5000/api';
+  : 'http://localhost:5001/api';
 
 function token() { return localStorage.getItem('token') || ''; }
 
@@ -101,6 +101,48 @@ const api = {
     fd.append('file', file);
     return req('POST', `/requests/${id}/submit-file`, fd, true);
   },
+
+  // ===== Admin Request Detail (with funding entity info) =====
+  adminGetRequestDetail: (id) => req('GET', `/admin/requests/${id}`),
+
+  // ===== Admin Status Update =====
+  adminUpdateRequestStatus: (id, status, note, rejection_reason) =>
+    req('PUT', `/admin/requests/${id}/status`, { status, note, rejection_reason }),
+
+  // ===== Admin Assign Funding Entity =====
+  adminAssignFundingEntity: (id, funding_entity_id) =>
+    req('PUT', `/admin/requests/${id}/assign-entity`, { funding_entity_id }),
+
+  // ===== Users Management (Admin) =====
+  adminGetUsers: () => req('GET', '/admin/users'),
+  adminUpdateUserStatus: (id, status) => req('PUT', `/admin/users/${id}/status`, { status }),
+  adminDeleteUser: (id) => req('DELETE', `/admin/users/${id}`),
+
+  // ===== Funding Entities =====
+  adminGetFundingEntities: () => req('GET', '/admin/funding-entities'),
+  adminAddFundingEntity: (data) => req('POST', '/admin/funding-entities', data),
+  adminUpdateFundingEntity: (id, data) => req('PUT', `/admin/funding-entities/${id}`, data),
+  adminDeleteFundingEntity: (id) => req('DELETE', `/admin/funding-entities/${id}`),
+
+  // ===== Funding Entity Contacts =====
+  adminGetContacts: (entity_id) => req('GET', `/admin/contacts${entity_id ? `?entity_id=${entity_id}` : ''}`),
+  adminAddContact: (data) => req('POST', '/admin/contacts', data),
+  adminUpdateContact: (id, data) => req('PUT', `/admin/contacts/${id}`, data),
+  adminDeleteContact: (id) => req('DELETE', `/admin/contacts/${id}`),
+
+  // ===== Companies =====
+  adminGetCompanies: (search) => req('GET', `/admin/companies${search ? `?search=${encodeURIComponent(search)}` : ''}`),
+
+  // ===== Brokers =====
+  getBrokers: () => req('GET', '/brokers'),
+  addBroker: (data) => req('POST', '/brokers', data),
+  deleteBroker: (id) => req('DELETE', `/brokers/${id}`),
+
+  // ===== Attendance =====
+  getAttendance: () => req('GET', '/attendance'),
+  getTodayAttendance: () => req('GET', '/attendance/today'),
+  checkIn: () => req('POST', '/attendance/check-in', {}),
+  checkOut: () => req('POST', '/attendance/check-out', {}),
 };
 
 export default api;

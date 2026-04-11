@@ -493,4 +493,17 @@ db.exec(`CREATE TABLE IF NOT EXISTS broadcast_message_reads (
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 )`);
 
+// جدول الحضور والانصراف
+db.exec(`CREATE TABLE IF NOT EXISTS attendance (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id INTEGER NOT NULL,
+  date TEXT NOT NULL,
+  check_in DATETIME,
+  check_out DATETIME,
+  notes TEXT,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE(user_id, date),
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+)`);
+
 module.exports = db;
