@@ -199,15 +199,15 @@ export default function Dashboard() {
             className="flex items-center gap-1.5 px-4 py-3 text-sm font-semibold text-blue-700 border-b-2 border-blue-700 whitespace-nowrap"
           >📋 الطلبات</button>
           <button
-            onClick={() => navigate('/brokers')}
-            className="flex items-center gap-1.5 px-4 py-3 text-sm font-medium text-slate-500 hover:text-slate-700 hover:bg-slate-50 border-b-2 border-transparent whitespace-nowrap"
-          >🤝 الوسطاء</button>
-          <button
             onClick={() => navigate('/attendance')}
             className="flex items-center gap-1.5 px-4 py-3 text-sm font-medium text-slate-500 hover:text-slate-700 hover:bg-slate-50 border-b-2 border-transparent whitespace-nowrap"
           >🕐 الحضور والانصراف</button>
           {isAdmin && (
             <>
+              <button
+                onClick={() => navigate('/brokers')}
+                className="flex items-center gap-1.5 px-4 py-3 text-sm font-medium text-slate-500 hover:text-slate-700 hover:bg-slate-50 border-b-2 border-transparent whitespace-nowrap"
+              >🤝 الوسطاء</button>
               <button
                 onClick={() => navigate('/companies')}
                 className="flex items-center gap-1.5 px-4 py-3 text-sm font-medium text-slate-500 hover:text-slate-700 hover:bg-slate-50 border-b-2 border-transparent whitespace-nowrap"

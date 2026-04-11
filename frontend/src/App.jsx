@@ -37,7 +37,7 @@ export default function App() {
       <Route path="/broadcasts" element={<PrivateRoute><Broadcasts /></PrivateRoute>} />
       <Route path="/funding-entities" element={<AdminRoute><FundingEntities /></AdminRoute>} />
       <Route path="/companies" element={<AdminRoute><Companies /></AdminRoute>} />
-      <Route path="/brokers" element={<PrivateRoute><Brokers /></PrivateRoute>} />
+      <Route path="/brokers" element={<AdminRoute><Brokers /></AdminRoute>} />
       <Route path="/attendance" element={<PrivateRoute><Attendance /></PrivateRoute>} />
       <Route path="*" element={<Navigate to="/login" replace />} />
     </Routes>
