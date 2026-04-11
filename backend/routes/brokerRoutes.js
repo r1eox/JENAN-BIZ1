@@ -4,15 +4,26 @@ const { authMiddleware } = require('../middleware/authMiddleware');
 
 const router = express.Router();
 
-// GET /api/brokers — all brokers (visible to authenticated users)
+// GET /api/brokers — الأدمن يرى الكل، الموظف/الشريك يرى وسطاءه فقط
 router.get('/', authMiddleware, (req, res) => {
   try {
-    const brokers = db.prepare(`
-      SELECT b.*, u.name as added_by_name
-      FROM brokers b
-      LEFT JOIN users u ON b.added_by_id = u.id
-      ORDER BY b.created_at DESC
-    `).all();
+    let brokers;
+    if (req.user.role === 'admin') {
+      brokers = db.prepare(`
+        SELECT b.*, u.name as added_by_name
+        FROM brokers b
+        LEFT JOIN users u ON b.added_by_id = u.id
+        ORDER BY b.created_at DESC
+      `).all();
+    } else {
+      brokers = db.prepare(`
+        SELECT b.*, u.name as added_by_name
+        FROM brokers b
+        LEFT JOIN users u ON b.added_by_id = u.id
+        WHERE b.added_by_id = ?
+        ORDER BY b.created_at DESC
+      `).all(req.user.id);
+    }
     res.json(brokers);
   } catch (err) {
     res.status(500).json({ error: 'خطأ في استرجاع الوسطاء' });
