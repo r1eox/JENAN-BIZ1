@@ -250,6 +250,70 @@ if (!adminExists) {
   console.log('✅ حساب الأدمن: admin@weseet.com | Admin@12345');
 }
 
+const insertUser = db.prepare(`
+  INSERT OR IGNORE INTO users (name, email, password, role, partner_type, status, phone)
+  VALUES (?, ?, ?, ?, ?, ?, ?)
+`);
+const insertUserPermission = db.prepare(`
+  INSERT OR IGNORE INTO user_permissions (user_id, permission_key, granted_by)
+  VALUES (?, ?, ?)
+`);
+
+function seedUser({ name, email, password, role, partnerType = null, status = 'approved', phone = null }) {
+  const hashed = bcrypt.hashSync(password, 12);
+  insertUser.run(name, email, hashed, role, partnerType, status, phone);
+  return db.prepare('SELECT id, email, role FROM users WHERE email = ?').get(email);
+}
+
+const primaryAdmin = db.prepare("SELECT id FROM users WHERE role = 'admin' ORDER BY id ASC LIMIT 1").get();
+if (primaryAdmin) {
+  seedUser({
+    name: 'مدير تجريبي',
+    email: 'manager@jenanbiz.com',
+    password: 'Manager@12345',
+    role: 'admin',
+    phone: '0500000001'
+  });
+
+  const supervisor = seedUser({
+    name: 'مشرف تجريبي',
+    email: 'supervisor@jenanbiz.com',
+    password: 'Supervisor@12345',
+    role: 'employee',
+    phone: '0500000002'
+  });
+
+  seedUser({
+    name: 'موظف تجريبي',
+    email: 'employee@jenanbiz.com',
+    password: 'Employee@12345',
+    role: 'employee',
+    phone: '0500000003'
+  });
+
+  seedUser({
+    name: 'شريك تجريبي',
+    email: 'partner@jenanbiz.com',
+    password: 'Partner@12345',
+    role: 'partner',
+    partnerType: 'وسيط',
+    phone: '0500000004'
+  });
+
+  if (supervisor) {
+    const supervisorPermissions = [
+      'view_all_requests',
+      'update_request_status',
+      'send_missing_docs',
+      'send_to_funding',
+      'send_to_employee'
+    ];
+    for (const permissionKey of supervisorPermissions) {
+      insertUserPermission.run(supervisor.id, permissionKey, primaryAdmin.id);
+    }
+  }
+}
+
 // Migrations — add new columns safely (ignored if already exist)
 const migrations = [
   "ALTER TABLE requests ADD COLUMN referred_by_id INTEGER REFERENCES users(id)",
