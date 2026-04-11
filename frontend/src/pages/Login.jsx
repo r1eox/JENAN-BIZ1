@@ -15,8 +15,8 @@ export default function Login() {
     setError('');
     setLoading(true);
     try {
-      await login(form.email, form.password);
-      navigate('/dashboard');
+      const loggedInUser = await login(form.email, form.password);
+      navigate(loggedInUser?.role === 'admin' ? '/admin' : '/dashboard');
     } catch (err) {
       setError(err.message || 'بيانات الدخول غير صحيحة');
     } finally {

@@ -23,6 +23,12 @@ const api = {
 
   getRequests: () => req('GET', '/requests'),
   getAdminRequests: () => req('GET', '/admin/requests'),
+  getAdminStats: () => req('GET', '/admin/stats'),
+  getAdminUsers: () => req('GET', '/admin/users'),
+  updateUserStatus: (userId, status) => req('PUT', `/admin/users/${userId}/status`, { status }),
+  getTeamOverview: () => req('GET', '/admin/team-overview'),
+  getSettings: () => req('GET', '/settings'),
+  updateSettings: (data) => req('PUT', '/settings', data),
   createRequest: (data) => req('POST', '/requests', data),
   getRequest: (id) => req('GET', `/requests/${id}`),
 

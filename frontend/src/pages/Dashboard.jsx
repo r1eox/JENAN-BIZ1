@@ -197,12 +197,22 @@ export default function Dashboard() {
           <h1 className="text-2xl font-bold text-blue-900">
             {dashboardMeta.title}
           </h1>
-          <button
-            onClick={() => navigate('/request/new')}
-            className="bg-blue-700 text-white px-5 py-2 rounded-lg font-semibold hover:bg-blue-800 transition"
-          >
-            {dashboardMeta.newRequestLabel}
-          </button>
+          <div className="flex items-center gap-2">
+            {isAdmin && (
+              <button
+                onClick={() => navigate('/admin')}
+                className="bg-slate-900 text-white px-4 py-2 rounded-lg font-semibold hover:bg-slate-800 transition"
+              >
+                لوحة المدير
+              </button>
+            )}
+            <button
+              onClick={() => navigate('/request/new')}
+              className="bg-blue-700 text-white px-5 py-2 rounded-lg font-semibold hover:bg-blue-800 transition"
+            >
+              {dashboardMeta.newRequestLabel}
+            </button>
+          </div>
         </div>
 
         {/* فلاتر البحث — للأدمن */}
