@@ -18,8 +18,6 @@ const STATUS_LABELS = {
 export default function Dashboard() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
-  const isAdmin = user?.role === 'admin';
-
   const [requests, setRequests]   = useState([]);
   const [loading,  setLoading]    = useState(true);
   const [error,    setError]      = useState('');
@@ -34,13 +32,59 @@ export default function Dashboard() {
   const [broadcastLastSeenAt, setBroadcastLastSeenAt] = useState(0);
   const [totalUnread, setTotalUnread] = useState(0);
 
+  const isAdmin = user?.role === 'admin';
+  const isPartner = user?.role === 'partner' || user?.role === 'company';
+  const canViewAllRequests = isAdmin || user?.permissions?.includes('view_all_requests');
+  const dashboardType = isAdmin
+    ? 'admin'
+    : canViewAllRequests
+      ? 'supervisor'
+      : isPartner
+        ? 'partner'
+        : 'employee';
+
+  const dashboardMeta = {
+    admin: {
+      navSubtitle: 'لوحة تحكم المدير',
+      title: `جميع الطلبات (${requests.length})`,
+      newRequestLabel: '+ طلب جديد',
+      badge: 'مدير',
+      badgeClass: 'bg-purple-100 text-purple-700',
+      emptyHint: ''
+    },
+    supervisor: {
+      navSubtitle: 'لوحة المشرف',
+      title: `متابعة الطلبات (${requests.length})`,
+      newRequestLabel: '+ طلب جديد',
+      badge: 'مشرف',
+      badgeClass: 'bg-amber-100 text-amber-700',
+      emptyHint: 'يمكنك متابعة الطلبات الحالية من هنا'
+    },
+    employee: {
+      navSubtitle: 'لوحة الموظف',
+      title: 'طلباتي',
+      newRequestLabel: '+ طلب جديد',
+      badge: 'موظف',
+      badgeClass: 'bg-sky-100 text-sky-700',
+      emptyHint: 'اضغط "طلب جديد" لبدء طلب تمويل'
+    },
+    partner: {
+      navSubtitle: 'لوحة الشريك',
+      title: 'طلبات الشريك',
+      newRequestLabel: '+ طلب شريك جديد',
+      badge: 'شريك',
+      badgeClass: 'bg-emerald-100 text-emerald-700',
+      emptyHint: 'يمكنك إنشاء ومتابعة الطلبات المرتبطة بك من هنا'
+    }
+  }[dashboardType];
+
   useEffect(() => {
-    const fn = isAdmin ? api.getAdminRequests : api.getRequests;
+    const fn = canViewAllRequests ? api.getAdminRequests : api.getRequests;
     fn()
       .then(setRequests)
       .catch(e => setError(e.message))
       .finally(() => setLoading(false));
-  }, [isAdmin]);
+  }, [canViewAllRequests]);
 
   useEffect(() => {
     const fn = isAdmin ? api.adminGetBroadcastMessages : api.getBroadcastMessages;
@@ -122,7 +166,7 @@ export default function Dashboard() {
           <div>
             <div className="font-bold text-blue-900 text-lg">جنان بيز</div>
             <div className="text-xs text-slate-400">
-              {isAdmin ? 'لوحة تحكم المدير' : 'منصة إدارة الطلبات'}
+              {dashboardMeta.navSubtitle}
             </div>
           </div>
         </div>
@@ -140,8 +184,8 @@ export default function Dashboard() {
               </span>
             )}
           </button>
-          {isAdmin && (
-            <span className="text-xs bg-purple-100 text-purple-700 px-2 py-1 rounded-full font-semibold">أدمن</span>
+          {dashboardMeta.badge && (
+            <span className={`text-xs px-2 py-1 rounded-full font-semibold ${dashboardMeta.badgeClass}`}>{dashboardMeta.badge}</span>
           )}
           <button onClick={logout} className="text-sm text-red-500 hover:underline">خروج</button>
         </div>
@@ -151,18 +195,18 @@ export default function Dashboard() {
         {/* رأس الصفحة */}
         <div className="flex items-center justify-between mb-5">
           <h1 className="text-2xl font-bold text-blue-900">
-            {isAdmin ? `جميع الطلبات (${requests.length})` : 'طلباتي'}
+            {dashboardMeta.title}
           </h1>
           <button
             onClick={() => navigate('/request/new')}
             className="bg-blue-700 text-white px-5 py-2 rounded-lg font-semibold hover:bg-blue-800 transition"
           >
-            + طلب جديد
+            {dashboardMeta.newRequestLabel}
           </button>
         </div>
 
         {/* فلاتر البحث — للأدمن */}
-        {isAdmin && (
+        {canViewAllRequests && (
           <div className="bg-white rounded-xl border border-slate-100 shadow-sm p-4 mb-5 flex flex-col sm:flex-row gap-3">
             <input
               type="text"
@@ -279,7 +323,7 @@ export default function Dashboard() {
           <div className="text-center py-20 text-slate-400">
             <div className="text-5xl mb-4">📋</div>
             <div className="text-lg">لا توجد طلبات</div>
-            {!isAdmin && <div className="text-sm mt-2">اضغط "طلب جديد" لبدء طلب تمويل</div>}
+            {dashboardMeta.emptyHint && <div className="text-sm mt-2">{dashboardMeta.emptyHint}</div>}
           </div>
         )}
 
@@ -299,7 +343,7 @@ export default function Dashboard() {
                       {r.entity_type} · {r.ownership_type} · {r.funding_type}
                     </div>
                     {/* اسم الموظف — للأدمن فقط */}
-                    {isAdmin && r.user_name && (
+                    {canViewAllRequests && r.user_name && (
                       <div className="text-xs text-purple-600 mt-1 font-medium">
                         👤 {r.user_name}
                         {r.user_phone && <span className="text-slate-400 mr-2">{r.user_phone}</span>}
